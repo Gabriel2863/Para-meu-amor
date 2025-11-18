@@ -1,11 +1,161 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="refresh" content="0;url=para-meu-amor.html">
-    <title>Redirecionando…</title>
-  </head>
-  <body>
-    <p>Redirecionando — se não acontecer, <a href="para-meu-amor.html">clique aqui</a>.</p>
-  </body>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Para meu amor</title>
+  <style>
+    :root{--bg:#0f1724;--card:#111827;--accent:#ff5252;--muted:#c7d4e3}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(135deg,#081226 0%, #081b2b 100%);color:#eaf1ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .wrap{max-width:820px;width:100%;text-align:center}
+    .btn-main{background:linear-gradient(90deg,var(--accent),#f97316);border:0;padding:18px 28px;border-radius:14px;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45);color:white}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));width:100%;max-width:680px;padding:28px;border-radius:14px;box-shadow:0 20px 50px rgba(2,6,23,.6);border:1px solid rgba(255,255,255,0.03)}
+    .text{font-size:20px;line-height:1.5;color:#eaf1ff;min-height:120px;text-align:left}
+    .name{font-weight:800;font-size:26px;letter-spacing:0.4px}
+    .highlight{color:var(--accent);font-size:28px;margin-left:6px;display:inline-block;font-weight:900}
+    .controls{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+    .opt{flex:1;min-width:200px;padding:12px 14px;border-radius:10px;border:2px solid rgba(255,255,255,0.05);background:transparent;color:inherit;cursor:pointer;font-weight:700}
+    .opt:hover{transform:translateY(-3px)}
+    .small{color:var(--muted);font-size:13px;margin-top:12px}
+    .close-x{position:absolute;right:18px;top:18px;background:transparent;border:0;color:#9fb0c8;font-weight:700;cursor:pointer}
+    .hearts{margin-top:12px;display:flex;gap:8px;align-items:center}
+    .heart{width:18px;height:18px;display:inline-block;transform:scale(0);opacity:0}
+    @keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="font-size:28px;margin-bottom:18px">Uma surpresa rápida ✨</h1>
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-direction:column">
+      <button id="openBtn" class="btn-main">Para meu amor</button>
+      <div class="small">Clique no botão para ver a surpresa do Biel futebolzinho!</div>
+    </div>
+  </div>
+
+  <template id="modalTpl">
+    <div class="modal" id="modal">
+      <div class="card" role="dialog" aria-modal="true">
+        <button class="close-x" id="closeBtn">✕</button>
+        <div class="text" id="textArea" aria-live="polite"></div>
+        <div class="controls" id="controls" style="display:none">
+          <button class="opt" id="opt1">Sim, claro! eu te amo!</button>
+          <button class="opt" id="opt2">Sim, a madrugada toda, meu amor!</button>
+        </div>
+        <div class="hearts" id="hearts"></div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const openBtn = document.getElementById('openBtn');
+    const tpl = document.getElementById('modalTpl');
+
+    const fullMessageParts = [
+      {text: 'Camila dos Reis Viera ', style: 'name'},
+      {text: 'DA COSTA', style: 'highlight'},
+      {text: "\n\nVocê é a pessoa mais geniosa e difícil de lidar, mas eu te amo e sempre vou te amar, desculpa por ser chato às vezes e gostar MUITO de jogar... dito isso, posso jogar um pouco hoje? prometo te amar para sempre", style: 'normal'}
+    ];
+
+    function createModal(){
+      const node = tpl.content.cloneNode(true);
+      document.body.appendChild(node);
+      const modal = document.getElementById('modal');
+      const textArea = document.getElementById('textArea');
+      const controls = document.getElementById('controls');
+      const closeBtn = document.getElementById('closeBtn');
+      const opt1 = document.getElementById('opt1');
+      const opt2 = document.getElementById('opt2');
+      const hearts = document.getElementById('hearts');
+
+      // Compose the message as a string but keep markers to style the name segments.
+      let composed = '';
+      fullMessageParts.forEach(p => composed += p.text);
+
+      // Typing effect: we will type the composed string but when we reach the "DA COSTA" portion we apply a different span.
+      let index = 0;
+      // compute start and end indices for the highlight
+      const before = fullMessageParts[0].text;
+      const highlight = fullMessageParts[1].text;
+      const startHighlight = before.length;
+      const endHighlight = startHighlight + highlight.length;
+
+      function typeNext(){
+        if(index > composed.length){
+          controls.style.display = 'flex';
+          return;
+        }
+        // rebuild innerHTML with spans based on current index
+        const visible = composed.slice(0, Math.max(0, Math.min(index, composed.length)));
+        const a = visible.slice(0, startHighlight);
+        const b = visible.slice(startHighlight, endHighlight);
+        const c = visible.slice(endHighlight);
+
+        textArea.innerHTML = '';
+        const spanA = document.createElement('span'); spanA.className = 'name'; spanA.textContent = a;
+        textArea.appendChild(spanA);
+        if(b.length>0){
+          const spanB = document.createElement('span'); spanB.className = 'highlight'; spanB.textContent = b;
+          textArea.appendChild(spanB);
+        }
+        const spanC = document.createElement('span'); spanC.textContent = c;
+        textArea.appendChild(spanC);
+
+        index++;
+        // speed: pause longer for punctuation
+        const currentChar = composed.charAt(index-1);
+        let delay = 45; // base speed in ms
+        if(currentChar === ',' || currentChar === ';') delay = 140;
+        if(currentChar === '.' || currentChar === '!' || currentChar === '?') delay = 220;
+        if(currentChar === '\n') delay = 120;
+
+        setTimeout(typeNext, delay);
+      }
+
+      typeNext();
+
+      function closeModal(){
+        modal.remove();
+      }
+
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+      function celebrate(){
+        // simple hearts animation
+        hearts.innerHTML = '';
+        for(let i=0;i<6;i++){
+          const h = document.createElement('div');
+          h.className = 'heart';
+          h.textContent = '❤️';
+          hearts.appendChild(h);
+          // staggered animation
+          setTimeout(()=>{ h.style.animation = 'pop .45s ease forwards'; }, 80*i);
+        }
+      }
+
+      opt1.addEventListener('click', ()=>{
+        controls.style.display = 'none';
+        textArea.innerHTML = '<div style="font-weight:800;font-size:20px">Obrigado 💖</div><div style="margin-top:8px;color:var(--muted)">Eu te amo muito também.</div>';
+        celebrate();
+        setTimeout(()=>{ closeModal(); }, 2200);
+      });
+
+      opt2.addEventListener('click', ()=>{
+        controls.style.display = 'none';
+        textArea.innerHTML = '<div style="font-weight:800;font-size:20px">Perfeito — madrugada inteira ✨</div><div style="margin-top:8px;color:var(--muted)">Prometo pausar o jogo se você precisar.</div>';
+        celebrate();
+        setTimeout(()=>{ closeModal(); }, 2200);
+      });
+    }
+
+    openBtn.addEventListener('click', ()=>{
+      createModal();
+      openBtn.disabled = true;
+      setTimeout(()=> openBtn.disabled = false, 700);
+    });
+
+  </script>
+</body>
 </html>
